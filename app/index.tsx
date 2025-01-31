@@ -158,10 +158,10 @@ export default function AlarmView() {
                 sound: "twangy_old_clock.wav"
             },
             trigger: {
-                type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-                seconds: 10
-                // hour: 12,
-                // minute: 5,
+                type: Notifications.SchedulableTriggerInputTypes.DAILY,
+                // seconds: 10
+                hour: hour,
+                minute: 0,
             },
         });
         console.log(identifier)
