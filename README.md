@@ -1,6 +1,13 @@
 # Welcome to your Expo app 👋
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+This is a simple React Native mobile application to create an hourly chime like old clocks used to. For the life of me, I have not been able to find a simple way to do this on my phone aside from setting an alarm that I need to manually dismiss. I have also not found 
+any existing applications that do this and *only* this. 
+
+The app will send a simple notification with a reminder of the time, on the hour. You can choose which hours it will send this notitification. 
+
+As someone with ADHD, I often find myself losing hours if I am engaged in an activity or project. I've found it helpful to have a periodic, passive reminder of the time passing.
+
+I am 99% sure this app will *not* work on iOS at this point. I have only tested it on an Android device, and I am aware of several iOS components it is missing. 
 
 ## Get started
 
