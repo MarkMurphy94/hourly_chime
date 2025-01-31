@@ -5,9 +5,11 @@ import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-//TODO: fix asyncstorage of alarms- first one is always enabled?
-//TODO: Change chime sound
+//TODO: Change chime sound + remove vibration
 //TODO: Test it out for a day or two
+//TODO: change time text in push n. to readable time
+//TODO: Refactor "alarm" -> "chime"
+
 
 Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -66,7 +68,18 @@ export default function AlarmView() {
         }
     };
 
+    const removeValue = async () => {
+        try {
+            await AsyncStorage.removeItem('alarms')
+        } catch (e) {
+            console.log('error: ', e)
+        }
+
+        console.log('Done.')
+    }
+
     useEffect(() => {
+        // removeValue()
         registerForPushNotificationsAsync().then(token => token && setExpoPushToken(token));
 
         if (Platform.OS === 'android') {
@@ -82,7 +95,7 @@ export default function AlarmView() {
             console.log('responding to notification')
             // handle response here
         });
-        Notifications.cancelAllScheduledNotificationsAsync(); // TODO: cos the fucking things wouldnt stop....
+        // Notifications.cancelAllScheduledNotificationsAsync(); // cos the fucking things wouldnt stop....
 
         return () => {
             notificationListener.current &&
@@ -95,12 +108,12 @@ export default function AlarmView() {
     useEffect(() => {
         loadAlarmsFromStorage().then((savedAlarms) => {
             if (savedAlarms) {
-                console.log(savedAlarms)
                 setAlarms(savedAlarms);
             } else {
                 setAlarms(generateAlarms()); // Default alarms if none are saved
             }
         });
+        console.log(alarms)
     }, []);
 
     async function registerForPushNotificationsAsync() {
@@ -110,8 +123,9 @@ export default function AlarmView() {
             await Notifications.setNotificationChannelAsync('myNotificationChannel', {
                 name: 'hourly_chime',
                 importance: Notifications.AndroidImportance.MAX,
-                vibrationPattern: [0, 250, 250, 250],
+                // vibrationPattern: [0, 250, 250, 250],
                 lightColor: '#FF231F7C',
+                sound: "twangy_old_clock.wav"
             });
         }
 
@@ -126,9 +140,6 @@ export default function AlarmView() {
                 alert('Failed to get push token for push notification!');
                 return;
             }
-            // Learn more about projectId:
-            // https://docs.expo.dev/push-notifications/push-notifications-setup/#configure-projectid
-            // EAS projectId is used here.
             try {
                 const projectId =
                     Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
@@ -155,16 +166,16 @@ export default function AlarmView() {
         const identifier = await Notifications.scheduleNotificationAsync({
             content: {
                 title: "The time is " + hour.toString(),
-                sound: "twangy_old_clock.wav"
+                sound: "twangy_old_clock.wav",
+                vibrate: []
             },
             trigger: {
-                type: Notifications.SchedulableTriggerInputTypes.DAILY,
-                // seconds: 10
-                hour: hour,
-                minute: 0,
+                type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+                seconds: 10
+                // hour: hour,
+                // minute: 0,
             },
         });
-        console.log(identifier)
         return identifier
     }
 
@@ -191,7 +202,7 @@ export default function AlarmView() {
                             Notifications.cancelScheduledNotificationAsync(alarm.identifier);
                             setAlarms((currentAlarms) => {
                                 const alarmsWithoutId = currentAlarms.map((a) =>
-                                    a.id === alarm_id ? { ...a, identifier: null } : a
+                                    a.id === alarm_id ? { ...a, identifier: null, enabled: false } : a
                                 )
                                 saveAlarmsToStorage(alarmsWithoutId); // Save after update
                                 console.log('Disabled chime ID: ', alarm.identifier)
