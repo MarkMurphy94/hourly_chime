@@ -9,13 +9,26 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "hourly.chime",
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.markmurphy94.hourly_chime",
+      "runtimeVersion": "1.0.0",
+      "useNextNotificationsApi": true,
+      "enableBackgroundNotification": true,
+      "priority": "max",
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "SCHEDULE_EXACT_ALARM"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -32,10 +45,32 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "sounds": [
+            "sounds/gong_sounding_clock.mp3",
+            "sounds/single_ding.mp3",
+            "sounds/ting_tung.aiff",
+            "sounds/twangy_old_clock.wav"
+          ]
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "443bb042-8dd7-4b52-9dfa-c8b65ce7304b"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/443bb042-8dd7-4b52-9dfa-c8b65ce7304b"
     }
   }
 }
