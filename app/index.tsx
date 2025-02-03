@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, FlatList, Switch, Button, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, FlatList, Switch, Button, TouchableOpacity, StyleSheet, Platform, PermissionsAndroid } from 'react-native';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-//TODO: Change chime sound + remove vibration
-//TODO: Test it out for a day or two
+//TODO: fix delay issue- implement in kotlin files
 //TODO: change time text in push n. to readable time
-//TODO: Refactor "alarm" -> "chime"
+//TODO: day picker
 
 
 Notifications.setNotificationHandler({
@@ -19,7 +18,7 @@ Notifications.setNotificationHandler({
     }),
 });
 
-type Alarm = {
+type Chime = {
     id: string;
     time: string;
     hour: number;
@@ -27,50 +26,50 @@ type Alarm = {
     identifier: string | null; // Allow `identifier` to be a string or null
 };
 
-export default function AlarmView() {
+export default function chimeView() {
     const [expoPushToken, setExpoPushToken] = useState('');
     const [channels, setChannels] = useState<Notifications.NotificationChannel[]>([]);
     const [notification, setNotification] = useState<Notifications.Notification | undefined>(undefined);
     const notificationListener = useRef<Notifications.EventSubscription>();
     const responseListener = useRef<Notifications.EventSubscription>();
-    const ALARM_STORAGE_KEY = 'alarms';
+    const CHIME_STORAGE_KEY = 'chimes';
     const formatTime12Hour = (hour: number): string => {
         const period = hour < 12 ? "AM" : "PM";
         const hour12 = hour % 12 || 12; // Convert 0 to 12 for 12 AM, and 12 to 12 PM
         return `${hour12}:00 ${period}`;
     };
-    const generateAlarms = (): Alarm[] =>
+    const generatechimes = (): Chime[] =>
         Array.from({ length: 24 }, (_, hour) => ({
-            id: `alarm-${hour}`,
+            id: `chime-${hour}`,
             time: formatTime12Hour(hour),
             hour,
             enabled: false,
             identifier: null,
         }));
-    const [alarms, setAlarms] = useState<Alarm[]>(generateAlarms());
+    const [chimes, setchimes] = useState<Chime[]>(generatechimes());
 
 
-    const saveAlarmsToStorage = async (alarms: Alarm[]) => {
+    const savechimesToStorage = async (chimes: Chime[]) => {
         try {
-            await AsyncStorage.setItem(ALARM_STORAGE_KEY, JSON.stringify(alarms));
+            await AsyncStorage.setItem(CHIME_STORAGE_KEY, JSON.stringify(chimes));
         } catch (error) {
-            console.error('Failed to save alarms:', error);
+            console.error('Failed to save chimes:', error);
         }
     };
 
-    const loadAlarmsFromStorage = async () => {
+    const loadchimesFromStorage = async () => {
         try {
-            const storedAlarms = await AsyncStorage.getItem(ALARM_STORAGE_KEY);
-            return storedAlarms ? JSON.parse(storedAlarms) : null;
+            const storedchimes = await AsyncStorage.getItem(CHIME_STORAGE_KEY);
+            return storedchimes ? JSON.parse(storedchimes) : null;
         } catch (error) {
-            console.error('Failed to load alarms:', error);
+            console.error('Failed to load chimes:', error);
             return null;
         }
     };
 
     const removeValue = async () => {
         try {
-            await AsyncStorage.removeItem('alarms')
+            await AsyncStorage.removeItem('chimes')
         } catch (e) {
             console.log('error: ', e)
         }
@@ -106,26 +105,26 @@ export default function AlarmView() {
     }, []);
 
     useEffect(() => {
-        loadAlarmsFromStorage().then((savedAlarms) => {
-            if (savedAlarms) {
-                setAlarms(savedAlarms);
+        loadchimesFromStorage().then((savedchimes) => {
+            if (savedchimes) {
+                setchimes(savedchimes);
             } else {
-                setAlarms(generateAlarms()); // Default alarms if none are saved
+                setchimes(generatechimes()); // Default chimes if none are saved
             }
         });
-        console.log(alarms)
+        console.log(chimes)
     }, []);
 
     async function registerForPushNotificationsAsync() {
         let token;
-
         if (Platform.OS === 'android') {
-            await Notifications.setNotificationChannelAsync('myNotificationChannel', {
+            await Notifications.setNotificationChannelAsync('chimes2', {
                 name: 'hourly_chime',
                 importance: Notifications.AndroidImportance.MAX,
                 // vibrationPattern: [0, 250, 250, 250],
+                enableVibrate: false,
                 lightColor: '#FF231F7C',
-                sound: "twangy_old_clock.wav"
+                sound: "twangy_old_clock.wav",
             });
         }
 
@@ -166,69 +165,69 @@ export default function AlarmView() {
         const identifier = await Notifications.scheduleNotificationAsync({
             content: {
                 title: "The time is " + hour.toString(),
-                sound: "twangy_old_clock.wav",
-                vibrate: []
+                // vibrate: [0, 250, 250, 250]
             },
             trigger: {
-                type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-                seconds: 10
-                // hour: hour,
-                // minute: 0,
+                type: Notifications.SchedulableTriggerInputTypes.DAILY,
+                // seconds: 10,
+                channelId: 'chimes2',
+                hour: hour,
+                minute: 0,
             },
         });
         return identifier
     }
 
-    const toggleAlarm = (alarm_id: string) => {
-        setAlarms((prevAlarms) =>
-            prevAlarms.map((alarm) => {
-                if (alarm.id === alarm_id) {
-                    const newEnabledState = !alarm.enabled;
+    const togglechime = (chime_id: string) => {
+        setchimes((prevchimes) =>
+            prevchimes.map((chime) => {
+                if (chime.id === chime_id) {
+                    const newEnabledState = !chime.enabled;
                     if (newEnabledState) {
-                        // Enable alarm and set identifier
-                        enableChime(alarm.hour).then((notification_id) => {
-                            setAlarms((currentAlarms) => {
-                                const alarmsWithId = currentAlarms.map((a) =>
-                                    a.id === alarm_id ? { ...a, identifier: notification_id } : a
+                        // Enable chime and set identifier
+                        enableChime(chime.hour).then((notification_id) => {
+                            setchimes((currentchimes) => {
+                                const chimesWithId = currentchimes.map((a) =>
+                                    a.id === chime_id ? { ...a, identifier: notification_id } : a
                                 )
-                                saveAlarmsToStorage(alarmsWithId); // Save after update
+                                savechimesToStorage(chimesWithId); // Save after update
                                 console.log('Enabled chime ID: ', notification_id)
-                                return alarmsWithId;
+                                return chimesWithId;
                             });
                         });
                     } else {
-                        // Disable alarm and cancel notification
-                        if (alarm.identifier) {
-                            Notifications.cancelScheduledNotificationAsync(alarm.identifier);
-                            setAlarms((currentAlarms) => {
-                                const alarmsWithoutId = currentAlarms.map((a) =>
-                                    a.id === alarm_id ? { ...a, identifier: null, enabled: false } : a
+                        // Disable chime and cancel notification
+                        if (chime.identifier) {
+                            Notifications.cancelScheduledNotificationAsync(chime.identifier);
+                            setchimes((currentchimes) => {
+                                const chimesWithoutId = currentchimes.map((a) =>
+                                    a.id === chime_id ? { ...a, identifier: null, enabled: false } : a
                                 )
-                                saveAlarmsToStorage(alarmsWithoutId); // Save after update
-                                console.log('Disabled chime ID: ', alarm.identifier)
-                                return alarmsWithoutId;
+                                savechimesToStorage(chimesWithoutId); // Save after update
+                                console.log('Disabled chime ID: ', chime.identifier)
+                                return chimesWithoutId;
                             });
                         }
                     }
-                    return { ...alarm, enabled: newEnabledState };
+                    return { ...chime, enabled: newEnabledState };
                 }
-                return alarm;
+                return chime;
             })
         );
     };
 
     const chooseSound = (id: String) => {
-        alert(`Choose sound for alarm ID: ${id}`);
+        alert(`Choose sound for chime ID: ${id}`);
     };
 
-    const renderAlarmItem = ({ item }) => (
-        <TouchableOpacity style={styles.alarmCard} onPress={() => toggleAlarm(item.id)}>
-            <View style={styles.alarmContent}>
-                <Text style={styles.alarmTime}>{item.time}</Text>
+    const renderchimeItem = ({ item }) => (
+        <TouchableOpacity style={styles.chimeCard} onPress={() => togglechime(item.id)}>
+            <View style={styles.chimeContent}>
+                <Text style={styles.chimeTime}>{item.time}</Text>
                 {/* <Button style={styles.soundButton} title='choose sound' onPress={() => chooseSound(item.id)} /> */}
                 <Switch
                     value={item.enabled}
-                    onValueChange={() => toggleAlarm(item.id)}
+                    onValueChange={() => togglechime(item.id)}
                 />
             </View>
         </TouchableOpacity>
@@ -236,15 +235,15 @@ export default function AlarmView() {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.header}>Alarms</Text>
+            <Text style={styles.header}>chimes</Text>
             <FlatList
-                data={alarms}
-                renderItem={renderAlarmItem}
+                data={chimes}
+                renderItem={renderchimeItem}
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={styles.listContainer}
             />
             {/* <Link href={'/notifications_page'}> got to page</Link> */}
-            {/* <Button style={styles.addButton} title='Test a notification' onPress={toggleAlarm}>
+            {/* <Button style={styles.addButton} title='Test a notification' onPress={togglechime}>
             </Button> */}
         </View>
     );
@@ -265,7 +264,7 @@ const styles = StyleSheet.create({
     listContainer: {
         paddingBottom: 16,
     },
-    alarmCard: {
+    chimeCard: {
         marginBottom: 12,
         borderRadius: 10,
         backgroundColor: '#ffffff',
@@ -276,12 +275,12 @@ const styles = StyleSheet.create({
         shadowRadius: 3,
         elevation: 2,
     },
-    alarmContent: {
+    chimeContent: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
     },
-    alarmTime: {
+    chimeTime: {
         fontSize: 18,
         fontWeight: '500',
         color: '#374151',
@@ -308,4 +307,4 @@ const styles = StyleSheet.create({
     },
 });
 
-// export default AlarmView;
+// export default chimeView;
