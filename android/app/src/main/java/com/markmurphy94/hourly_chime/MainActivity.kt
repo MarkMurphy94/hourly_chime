@@ -1,6 +1,7 @@
 package com.markmurphy94.hourly_chime
 import expo.modules.splashscreen.SplashScreenManager
 
+// import com.markmurphy94.hourly_chime.AlarmModule
 import android.os.Build
 import android.os.Bundle
 
@@ -62,4 +63,12 @@ class MainActivity : ReactActivity() {
       // because it's doing more than [Activity.moveTaskToBack] in fact.
       super.invokeDefaultOnBackPressed()
   }
+
+  // override fun getPackages(): List<ReactPackage> {
+  //     return listOf(
+  //         MainReactPackage(),
+  //         AlarmModule(reactApplicationContext) // Register the module
+  //     )
+  // }
+
 }

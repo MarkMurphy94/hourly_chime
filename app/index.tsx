@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, FlatList, Switch, Button, TouchableOpacity, StyleSheet, Platform, PermissionsAndroid } from 'react-native';
+import { View, Text, FlatList, Switch, Button, TouchableOpacity, StyleSheet, Platform, NativeModules } from 'react-native';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
@@ -8,6 +8,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 //TODO: fix delay issue- implement in kotlin files
 //TODO: change time text in push n. to readable time
 //TODO: day picker
+//TODO: "index" -> something like "Chimes"
+//TODO: redo toggleChime function?
 
 
 Notifications.setNotificationHandler({
@@ -28,6 +30,7 @@ type Chime = {
 
 export default function chimeView() {
     const [expoPushToken, setExpoPushToken] = useState('');
+    const { AlarmModule } = NativeModules;
     const [channels, setChannels] = useState<Notifications.NotificationChannel[]>([]);
     const [notification, setNotification] = useState<Notifications.Notification | undefined>(undefined);
     const notificationListener = useRef<Notifications.EventSubscription>();
@@ -47,7 +50,6 @@ export default function chimeView() {
             identifier: null,
         }));
     const [chimes, setchimes] = useState<Chime[]>(generatechimes());
-
 
     const savechimesToStorage = async (chimes: Chime[]) => {
         try {
@@ -112,7 +114,6 @@ export default function chimeView() {
                 setchimes(generatechimes()); // Default chimes if none are saved
             }
         });
-        console.log(chimes)
     }, []);
 
     async function registerForPushNotificationsAsync() {
@@ -150,7 +151,6 @@ export default function chimeView() {
                         projectId,
                     })
                 ).data;
-                console.log(token);
             } catch (e) {
                 token = `${e}`;
             }
@@ -161,10 +161,21 @@ export default function chimeView() {
         return token;
     }
 
+    // const scheduleAlarm = (timestamp) => {
+    //     AlarmModule.scheduleExactAlarm(timestamp);
+    // };
+
+    // const handleScheduleAlarm = () => {
+    //     const futureTime = Date.now() + 60000; // 1 minute from now
+    //     scheduleAlarm(futureTime);
+    // };
+
     async function enableChime(hour: number) {
         const identifier = await Notifications.scheduleNotificationAsync({
             content: {
                 title: "The time is " + hour.toString(),
+                priority: Notifications.AndroidNotificationPriority.MAX,
+                interruptionLevel: 'timeSensitive',
                 // vibrate: [0, 250, 250, 250]
             },
             trigger: {
