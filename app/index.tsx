@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, FlatList, Switch, Button, TouchableOpacity, StyleSheet, Platform, NativeModules } from 'react-native';
+import { Stack } from 'expo-router';
+import { View, Text, FlatList, Switch, Button, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-//TODO: fix delay issue- implement in kotlin files
-//TODO: change time text in push n. to readable time
 //TODO: day picker
-//TODO: "index" -> something like "Chimes"
-//TODO: redo toggleChime function?
+//TODO: Change app Icon
+//TODO: raise sound volume
+//TODO: sound picker
+//TODO: Add some interesting UI? Grandfather clock backdrop? Different font?
 
 
 Notifications.setNotificationHandler({
@@ -30,7 +31,6 @@ type Chime = {
 
 export default function chimeView() {
     const [expoPushToken, setExpoPushToken] = useState('');
-    const { AlarmModule } = NativeModules;
     const [channels, setChannels] = useState<Notifications.NotificationChannel[]>([]);
     const [notification, setNotification] = useState<Notifications.Notification | undefined>(undefined);
     const notificationListener = useRef<Notifications.EventSubscription>();
@@ -173,7 +173,7 @@ export default function chimeView() {
     async function enableChime(hour: number) {
         const identifier = await Notifications.scheduleNotificationAsync({
             content: {
-                title: "The time is " + hour.toString(),
+                title: "The time is " + formatTime12Hour(hour),
                 priority: Notifications.AndroidNotificationPriority.MAX,
                 interruptionLevel: 'timeSensitive',
                 // vibrate: [0, 250, 250, 250]
@@ -189,43 +189,46 @@ export default function chimeView() {
         return identifier
     }
 
-    const togglechime = (chime_id: string) => {
-        setchimes((prevchimes) =>
-            prevchimes.map((chime) => {
-                if (chime.id === chime_id) {
-                    const newEnabledState = !chime.enabled;
-                    if (newEnabledState) {
-                        // Enable chime and set identifier
-                        enableChime(chime.hour).then((notification_id) => {
-                            setchimes((currentchimes) => {
-                                const chimesWithId = currentchimes.map((a) =>
-                                    a.id === chime_id ? { ...a, identifier: notification_id } : a
-                                )
-                                savechimesToStorage(chimesWithId); // Save after update
-                                console.log('Enabled chime ID: ', notification_id)
-                                return chimesWithId;
-                            });
-                        });
-                    } else {
-                        // Disable chime and cancel notification
-                        if (chime.identifier) {
-                            Notifications.cancelScheduledNotificationAsync(chime.identifier);
-                            setchimes((currentchimes) => {
-                                const chimesWithoutId = currentchimes.map((a) =>
-                                    a.id === chime_id ? { ...a, identifier: null, enabled: false } : a
-                                )
-                                savechimesToStorage(chimesWithoutId); // Save after update
-                                console.log('Disabled chime ID: ', chime.identifier)
-                                return chimesWithoutId;
-                            });
-                        }
-                    }
-                    return { ...chime, enabled: newEnabledState };
-                }
-                return chime;
-            })
+    const togglechime = async (chime_id: string) => {
+        setchimes((prevChimes) =>
+            prevChimes.map((chime) =>
+                chime.id === chime_id ? { ...chime, enabled: !chime.enabled } : chime
+            )
         );
+
+        const chime = chimes.find((c) => c.id === chime_id);
+        if (!chime) return;
+
+        if (!chime.enabled) {
+            // Enable chime
+            try {
+                const notification_id = await enableChime(chime.hour);
+                updateChimeState(chime_id, notification_id, true);
+                console.log("Enabled chime ID: ", notification_id);
+            } catch (error) {
+                console.error("Failed to enable chime:", error);
+            }
+                    } else {
+            // Disable chime
+                        if (chime.identifier) {
+                await Notifications.cancelScheduledNotificationAsync(chime.identifier);
+                updateChimeState(chime_id, null, false);
+                console.log("Disabled chime ID: ", chime.identifier);
+            }
+        }
     };
+
+    // Helper function to update chimes in state & storage
+    const updateChimeState = (chime_id: string, identifier: string | null, enabled: boolean) => {
+        setchimes((currentChimes) => {
+            const updatedChimes = currentChimes.map((chime) =>
+                chime.id === chime_id ? { ...chime, identifier, enabled } : chime
+            );
+            savechimesToStorage(updatedChimes);
+            return updatedChimes;
+        });
+    };
+
 
     const chooseSound = (id: String) => {
         alert(`Choose sound for chime ID: ${id}`);
@@ -246,16 +249,23 @@ export default function chimeView() {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.header}>chimes</Text>
+            <Stack.Screen
+                options={{
+                    title: 'Chimes',
+                    // headerStyle: { backgroundColor: '#000' },
+                    // headerTintColor: '#fff',
+                    headerTitleStyle: {
+                        fontWeight: 'bold',
+                        fontFamily: 'GuavineDemoRegular-1jGgL'
+                    },
+                }}
+            />
             <FlatList
                 data={chimes}
                 renderItem={renderchimeItem}
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={styles.listContainer}
             />
-            {/* <Link href={'/notifications_page'}> got to page</Link> */}
-            {/* <Button style={styles.addButton} title='Test a notification' onPress={togglechime}>
-            </Button> */}
         </View>
     );
 };
