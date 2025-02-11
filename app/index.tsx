@@ -6,9 +6,9 @@ import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+//TODO: raise sound volume- after build, try notification again
 //TODO: day picker
 //TODO: Change app Icon
-//TODO: raise sound volume
 //TODO: sound picker
 //TODO: Add some interesting UI? Grandfather clock backdrop? Different font?
 
@@ -119,13 +119,13 @@ export default function chimeView() {
     async function registerForPushNotificationsAsync() {
         let token;
         if (Platform.OS === 'android') {
-            await Notifications.setNotificationChannelAsync('chimes2', {
+            await Notifications.setNotificationChannelAsync('new_chimes_again_7', {  //chimes2
                 name: 'hourly_chime',
                 importance: Notifications.AndroidImportance.MAX,
                 // vibrationPattern: [0, 250, 250, 250],
                 enableVibrate: false,
                 lightColor: '#FF231F7C',
-                sound: "twangy_old_clock.wav",
+                sound: "twangy_old_clock_louder.wav",
             });
         }
 
@@ -161,14 +161,18 @@ export default function chimeView() {
         return token;
     }
 
-    // const scheduleAlarm = (timestamp) => {
-    //     AlarmModule.scheduleExactAlarm(timestamp);
+    // export type WeeklyTriggerInput = {
+    //     type: SchedulableTriggerInputTypes.WEEKLY;
+    //     channelId?: string;
+    //     weekday: number;
+    //     hour: number;
+    //     minute: number;
     // };
 
-    // const handleScheduleAlarm = () => {
-    //     const futureTime = Date.now() + 60000; // 1 minute from now
-    //     scheduleAlarm(futureTime);
-    // };
+    //   to set chimes for certain days of the week:
+    // const days = [0, 1, 2, 3, 4, 5, 6];
+    // for day in days:
+    //    enableChime(day, hour)
 
     async function enableChime(hour: number) {
         const identifier = await Notifications.scheduleNotificationAsync({
@@ -176,12 +180,13 @@ export default function chimeView() {
                 title: "The time is " + formatTime12Hour(hour),
                 priority: Notifications.AndroidNotificationPriority.MAX,
                 interruptionLevel: 'timeSensitive',
+                // sound: "twangy_old_clock_louder.wav",
                 // vibrate: [0, 250, 250, 250]
             },
             trigger: {
                 type: Notifications.SchedulableTriggerInputTypes.DAILY,
                 // seconds: 10,
-                channelId: 'chimes2',
+                channelId: 'new_chimes_again_7',
                 hour: hour,
                 minute: 0,
             },
@@ -208,9 +213,9 @@ export default function chimeView() {
             } catch (error) {
                 console.error("Failed to enable chime:", error);
             }
-                    } else {
+        } else {
             // Disable chime
-                        if (chime.identifier) {
+            if (chime.identifier) {
                 await Notifications.cancelScheduledNotificationAsync(chime.identifier);
                 updateChimeState(chime_id, null, false);
                 console.log("Disabled chime ID: ", chime.identifier);

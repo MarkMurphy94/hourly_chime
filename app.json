@@ -4,7 +4,7 @@
     "slug": "hourly_chime",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/clipart2804211.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -17,7 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/clipart2804211.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.markmurphy94.hourly_chime",
@@ -41,7 +41,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/clipart2804211.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
@@ -54,7 +54,17 @@
             "./assets/sounds/gong_sounding_clock.mp3",
             "./assets/sounds/single_ding.mp3",
             "./assets/sounds/ting_tung.aiff",
-            "./assets/sounds/twangy_old_clock.wav"
+            "./assets/sounds/twangy_old_clock.wav",
+            "./assets/sounds/twangy_old_clock_louder.wav"
+          ]
+        }
+      ],
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/GuavineDemoRegular-1jGgL.otf",
+            "./assets/fonts/VollkornRegular-ZVJEZ.otf"
           ]
         }
       ]
