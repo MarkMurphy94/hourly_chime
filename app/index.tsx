@@ -6,9 +6,7 @@ import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-//TODO: raise sound volume- after build, try notification again
 //TODO: day picker
-//TODO: Change app Icon
 //TODO: sound picker
 //TODO: Add some interesting UI? Grandfather clock backdrop? Different font?
 
@@ -80,7 +78,6 @@ export default function chimeView() {
     }
 
     useEffect(() => {
-        // removeValue()
         registerForPushNotificationsAsync().then(token => token && setExpoPushToken(token));
 
         if (Platform.OS === 'android') {
@@ -94,7 +91,6 @@ export default function chimeView() {
         responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
             console.log(response);
             console.log('responding to notification')
-            // handle response here
         });
         // Notifications.cancelAllScheduledNotificationsAsync(); // cos the fucking things wouldnt stop....
 

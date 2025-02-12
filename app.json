@@ -50,6 +50,7 @@
       [
         "expo-notifications",
         {
+          "icon": "./assets/images/clipart2804211.png",
           "sounds": [
             "./assets/sounds/gong_sounding_clock.mp3",
             "./assets/sounds/single_ding.mp3",
