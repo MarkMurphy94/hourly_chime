@@ -6,6 +6,7 @@ import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+//TODO: Help text modal- battery usage, how to use, app version etc
 //TODO: day picker
 //TODO: sound picker
 //TODO: Add some interesting UI? Grandfather clock backdrop? Different font?
@@ -66,16 +67,6 @@ export default function chimeView() {
             return null;
         }
     };
-
-    const removeValue = async () => {
-        try {
-            await AsyncStorage.removeItem('chimes')
-        } catch (e) {
-            console.log('error: ', e)
-        }
-
-        console.log('Done.')
-    }
 
     useEffect(() => {
         registerForPushNotificationsAsync().then(token => token && setExpoPushToken(token));
