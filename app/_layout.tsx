@@ -33,6 +33,7 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
         <Stack.Screen name="index" />
+        {/* <Stack.Screen name="HelpText" options={{ presentation: 'modal' }} /> */}
         {/* <Stack.Screen name="notifications_page" /> */}
       </Stack>
       <StatusBar style="auto" />

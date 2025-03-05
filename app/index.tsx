@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Stack } from 'expo-router';
-import { View, Text, FlatList, Switch, Button, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { Stack, Link } from 'expo-router';
+import { View, Text, FlatList, Switch, Modal, Pressable, Alert, Button, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 //TODO: Help text modal- battery usage, how to use, app version etc
+//TODO: setting/button to clear all chimes incase of errors/de-sync of notifications
 //TODO: day picker
 //TODO: sound picker
 //TODO: Add some interesting UI? Grandfather clock backdrop? Different font?
+//TODO: Option to auto-dismiss notification in bar, and just make chime sound
 
 
 Notifications.setNotificationHandler({
@@ -35,11 +37,14 @@ export default function chimeView() {
     const notificationListener = useRef<Notifications.EventSubscription>();
     const responseListener = useRef<Notifications.EventSubscription>();
     const CHIME_STORAGE_KEY = 'chimes';
+    const [modalVisible, setModalVisible] = useState(false);
+
     const formatTime12Hour = (hour: number): string => {
         const period = hour < 12 ? "AM" : "PM";
         const hour12 = hour % 12 || 12; // Convert 0 to 12 for 12 AM, and 12 to 12 PM
         return `${hour12}:00 ${period}`;
     };
+
     const generatechimes = (): Chime[] =>
         Array.from({ length: 24 }, (_, hour) => ({
             id: `chime-${hour}`,
@@ -48,6 +53,7 @@ export default function chimeView() {
             enabled: false,
             identifier: null,
         }));
+
     const [chimes, setchimes] = useState<Chime[]>(generatechimes());
 
     const savechimesToStorage = async (chimes: Chime[]) => {
@@ -221,7 +227,6 @@ export default function chimeView() {
         });
     };
 
-
     const chooseSound = (id: String) => {
         alert(`Choose sound for chime ID: ${id}`);
     };
@@ -250,14 +255,41 @@ export default function chimeView() {
                         fontWeight: 'bold',
                         fontFamily: 'GuavineDemoRegular-1jGgL'
                     },
+                    headerRight: () => (
+                        <TouchableOpacity onPressIn={() => setModalVisible(true)} style={styles.headerButton}>
+                            <Text style={styles.headerButtonText}>?</Text>
+                        </TouchableOpacity>
+                    ),
                 }}
             />
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={modalVisible}>
+                <View style={styles.centeredView}>
+                    <View style={styles.modalView}>
+                        {/* Add the app icon here? */}
+                        <Text style={styles.modalText}>Thank you for downloading the Grandfather Clock app!</Text>
+                        <Text style={styles.modalText}>Simply toggle the hours you want chimes for, and a daily chime will be scheduled for that hour.</Text>
+                        <Text style={styles.modalText}>If your chimes are not working, try following these steps. PLEASE NOTE: These settings may be slightly different on your phone:</Text>
+                        <Text style={styles.modalText}>1. Open your phone's settings and look for the battery settings.</Text>
+                        <Text style={styles.modalText}>2. Open the Background Usage Limits setting, and add this app to the list of "Never auto sleeping" apps.</Text>
+                        {/* <Text style={styles.modalText}>PLEASE NOTE: These settings may look slightly different on your phone.</Text> */}
+                        <Pressable
+                            style={[styles.button, styles.buttonClose]}
+                            onPress={() => setModalVisible(!modalVisible)}>
+                            <Text style={styles.textStyle}>Close</Text>
+                        </Pressable>
+                    </View>
+                </View>
+            </Modal>
             <FlatList
                 data={chimes}
                 renderItem={renderchimeItem}
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={styles.listContainer}
             />
+            {/* <Link href="/HelpText">open modal </Link> */}
         </View>
     );
 };
@@ -276,6 +308,58 @@ const styles = StyleSheet.create({
     },
     listContainer: {
         paddingBottom: 16,
+    },
+    centeredView: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalView: {
+        margin: 20,
+        backgroundColor: 'white',
+        borderRadius: 20,
+        padding: 35,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    button: {
+        borderRadius: 20,
+        padding: 10,
+        elevation: 2,
+    },
+    buttonClose: {
+        backgroundColor: 'black',
+    },
+    textStyle: {
+        color: 'white',
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    modalText: {
+        marginBottom: 15,
+        textAlign: 'center',
+    },
+    headerButton: {
+        marginRight: 15,
+        padding: 10,
+        width: 38,
+        height: 38,
+        backgroundColor: 'white',
+        borderRadius: 38 / 2,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    headerButtonText: {
+        color: 'black',
+        fontSize: 18,
+        fontWeight: 'bold',
     },
     chimeCard: {
         marginBottom: 12,
