@@ -1,6 +1,7 @@
 {
   "expo": {
-    "name": "hourly_chime",
+    "name": "Hourly Chime Grandfather Clock",
+    "description": "A simple app that chimes on the hour",
     "slug": "hourly_chime",
     "version": "1.0.0",
     "orientation": "portrait",

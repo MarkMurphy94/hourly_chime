@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Stack, Link } from 'expo-router';
-import { View, Text, FlatList, Switch, Modal, Pressable, Alert, Button, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, FlatList, Switch, Modal, Pressable, Alert, Button, Image, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-//TODO: Help text modal- battery usage, how to use, app version etc
+//TODO: rename app display name
+//TODO: Some mechanism to submit feedback/bug reports- email inbox with pre-made template?
 //TODO: setting/button to clear all chimes incase of errors/de-sync of notifications
 //TODO: day picker
 //TODO: sound picker
@@ -268,8 +269,8 @@ export default function chimeView() {
                 visible={modalVisible}>
                 <View style={styles.centeredView}>
                     <View style={styles.modalView}>
-                        {/* Add the app icon here? */}
-                        <Text style={styles.modalText}>Thank you for downloading the Grandfather Clock app!</Text>
+                        <Image style={styles.modalImage} source={require("../assets/images/clipart2804211.png")} />
+                        <Text style={styles.modalText}>Thank you for downloading the Hourly Chime Grandfather Clock app!</Text>
                         <Text style={styles.modalText}>Simply toggle the hours you want chimes for, and a daily chime will be scheduled for that hour.</Text>
                         <Text style={styles.modalText}>If your chimes are not working, try following these steps. PLEASE NOTE: These settings may be slightly different on your phone:</Text>
                         <Text style={styles.modalText}>1. Open your phone's settings and look for the battery settings.</Text>
@@ -345,6 +346,11 @@ const styles = StyleSheet.create({
     modalText: {
         marginBottom: 15,
         textAlign: 'center',
+    },
+    modalImage: {
+        width: 100,
+        height: 100,
+        // backgroundColor: 'white',
     },
     headerButton: {
         marginRight: 15,
