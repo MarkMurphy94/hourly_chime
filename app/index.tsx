@@ -6,14 +6,6 @@ import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-//TODO: rename app display name
-//TODO: Some mechanism to submit feedback/bug reports- email inbox with pre-made template?
-//TODO: setting/button to clear all chimes incase of errors/de-sync of notifications
-//TODO: day picker
-//TODO: sound picker
-//TODO: Add some interesting UI? Grandfather clock backdrop? Different font?
-//TODO: Option to auto-dismiss notification in bar, and just make chime sound
-
 
 Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -120,6 +112,10 @@ export default function chimeView() {
                 enableVibrate: false,
                 lightColor: '#FF231F7C',
                 sound: "twangy_old_clock_louder.wav",
+                audioAttributes: {
+                    usage: Notifications.AndroidAudioUsage.ALARM,
+                    contentType: Notifications.AndroidAudioContentType.SONIFICATION,
+                }
             });
         }
 
@@ -178,11 +174,11 @@ export default function chimeView() {
                 // vibrate: [0, 250, 250, 250]
             },
             trigger: {
-                type: Notifications.SchedulableTriggerInputTypes.DAILY,
-                // seconds: 10,
+                type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+                seconds: 10,
                 channelId: 'new_chimes_again_7',
-                hour: hour,
-                minute: 0,
+                // hour: hour,
+                // minute: 0,
             },
         });
         return identifier
