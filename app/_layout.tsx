@@ -30,29 +30,27 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <Drawer>
-          <Drawer.Screen
-            name="index" // This is the name of the page and must match the url from root
-            options={{
-              drawerLabel: 'Chimes',
-              title: 'Chimes',
-            }}
-          />
-          <Drawer.Screen
-            name="settings" // This is the name of the page and must match the url from root
-            options={{
-              drawerLabel: 'Settings',
-              title: 'Settings',
-            }}
-          />
-          <Drawer.Screen
-            name="(tabs)"
-            options={{ drawerItemStyle: { display: 'none' } }}
-          />
-        </Drawer>
-      </GestureHandlerRootView>
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Drawer>
+        <Drawer.Screen
+          name="index" // This is the name of the page and must match the url from root
+          options={{
+            drawerLabel: 'Chimes',
+            title: 'Chimes',
+          }}
+        />
+        <Drawer.Screen
+          name="settings" // This is the name of the page and must match the url from root
+          options={{
+            drawerLabel: 'Settings',
+            title: 'Settings',
+          }}
+        />
+        <Drawer.Screen
+          name="(tabs)"
+          options={{ drawerItemStyle: { display: 'none' } }}
+        />
+      </Drawer>
+    </GestureHandlerRootView>
   );
 }
