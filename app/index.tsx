@@ -147,7 +147,6 @@ export default function chimeView() {
         } else {
             alert('Must use physical device for Push Notifications');
         }
-
         return token;
     }
 
@@ -174,11 +173,11 @@ export default function chimeView() {
                 // vibrate: [0, 250, 250, 250]
             },
             trigger: {
-                type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-                seconds: 10,
+                type: Notifications.SchedulableTriggerInputTypes.DAILY,
+                // seconds: 10,
                 channelId: 'new_chimes_again_7',
-                // hour: hour,
-                // minute: 0,
+                hour: hour,
+                minute: 0,
             },
         });
         return identifier
