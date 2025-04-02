@@ -65,8 +65,8 @@
         "expo-font",
         {
           "fonts": [
-            "./assets/fonts/GuavineDemoRegular-1jGgL.otf",
-            "./assets/fonts/VollkornRegular-ZVJEZ.otf"
+            "./assets/fonts/guavine_demo_regular.otf",
+            "./assets/fonts/vollkorn_regular.otf"
           ]
         }
       ]

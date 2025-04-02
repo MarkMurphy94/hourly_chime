@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Stack, Link } from 'expo-router';
 import { View, Text, FlatList, Switch, Modal, Pressable, Alert, Button, Image, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import * as Device from 'expo-device';
+import { NOTIFICATION_CHANNEL_ID, CHIME_STORAGE_KEY, DEFAULT_SOUND } from '../globals';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -10,7 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 Notifications.setNotificationHandler({
     handleNotification: async () => ({
         shouldShowAlert: true,
-        shouldPlaySound: false,
+        shouldPlaySound: true,
         shouldSetBadge: false,
     }),
 });
@@ -29,7 +30,6 @@ export default function chimeView() {
     const [notification, setNotification] = useState<Notifications.Notification | undefined>(undefined);
     const notificationListener = useRef<Notifications.EventSubscription>();
     const responseListener = useRef<Notifications.EventSubscription>();
-    const CHIME_STORAGE_KEY = 'chimes';
     const [modalVisible, setModalVisible] = useState(false);
 
     const formatTime12Hour = (hour: number): string => {
@@ -57,6 +57,16 @@ export default function chimeView() {
         }
     };
 
+    const clearOldNotificationChannels = async () => {
+        const channels = await Notifications.getNotificationChannelsAsync()
+        channels.forEach(channel => {
+            if (channel.id !== NOTIFICATION_CHANNEL_ID) {
+                Notifications.deleteNotificationChannelAsync(channel.id)
+            }
+        });
+        console.log('channels: ', channels)
+    }
+
     const loadchimesFromStorage = async () => {
         try {
             const storedchimes = await AsyncStorage.getItem(CHIME_STORAGE_KEY);
@@ -68,6 +78,7 @@ export default function chimeView() {
     };
 
     useEffect(() => {
+        clearOldNotificationChannels()
         registerForPushNotificationsAsync().then(token => token && setExpoPushToken(token));
 
         if (Platform.OS === 'android') {
@@ -103,17 +114,18 @@ export default function chimeView() {
     }, []);
 
     async function registerForPushNotificationsAsync() {
+        // TODO: access custom sounds
         let token;
         if (Platform.OS === 'android') {
-            await Notifications.setNotificationChannelAsync('new_chimes_again_7', {  //chimes2
-                name: 'hourly_chime',
+            await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNEL_ID, {
+                name: 'Chimes',
                 importance: Notifications.AndroidImportance.MAX,
-                // vibrationPattern: [0, 250, 250, 250],
                 enableVibrate: false,
                 lightColor: '#FF231F7C',
-                sound: "twangy_old_clock_louder.wav",
+                sound: DEFAULT_SOUND,
+                // vibrationPattern: [0, 250, 250, 250],
                 audioAttributes: {
-                    usage: Notifications.AndroidAudioUsage.ALARM,
+                    usage: Notifications.AndroidAudioUsage.NOTIFICATION,
                     contentType: Notifications.AndroidAudioContentType.SONIFICATION,
                 }
             });
@@ -150,6 +162,25 @@ export default function chimeView() {
         return token;
     }
 
+    async function enableChime(hour: number) {
+        const identifier = await Notifications.scheduleNotificationAsync({
+            content: {
+                title: "The time is " + formatTime12Hour(hour),
+                priority: Notifications.AndroidNotificationPriority.MAX,
+                interruptionLevel: 'timeSensitive',
+                // sound: "twangy_old_clock_louder.wav",
+            },
+            trigger: {
+                type: Notifications.SchedulableTriggerInputTypes.DAILY,
+                // seconds: 10,
+                channelId: NOTIFICATION_CHANNEL_ID,
+                hour: hour,
+                minute: 0,
+            },
+        });
+        return identifier
+    }
+
     // export type WeeklyTriggerInput = {
     //     type: SchedulableTriggerInputTypes.WEEKLY;
     //     channelId?: string;
@@ -162,26 +193,6 @@ export default function chimeView() {
     // const days = [0, 1, 2, 3, 4, 5, 6];
     // for day in days:
     //    enableChime(day, hour)
-
-    async function enableChime(hour: number) {
-        const identifier = await Notifications.scheduleNotificationAsync({
-            content: {
-                title: "The time is " + formatTime12Hour(hour),
-                priority: Notifications.AndroidNotificationPriority.MAX,
-                interruptionLevel: 'timeSensitive',
-                // sound: "twangy_old_clock_louder.wav",
-                // vibrate: [0, 250, 250, 250]
-            },
-            trigger: {
-                type: Notifications.SchedulableTriggerInputTypes.DAILY,
-                // seconds: 10,
-                channelId: 'new_chimes_again_7',
-                hour: hour,
-                minute: 0,
-            },
-        });
-        return identifier
-    }
 
     const togglechime = async (chime_id: string) => {
         setchimes((prevChimes) =>
@@ -228,7 +239,7 @@ export default function chimeView() {
     };
 
     const renderchimeItem = ({ item }) => (
-        <TouchableOpacity style={styles.chimeCard} onPress={() => togglechime(item.id)}>
+        <View style={styles.chimeCard}>
             <View style={styles.chimeContent}>
                 <Text style={styles.chimeTime}>{item.time}</Text>
                 {/* <Button style={styles.soundButton} title='choose sound' onPress={() => chooseSound(item.id)} /> */}
@@ -237,7 +248,7 @@ export default function chimeView() {
                     onValueChange={() => togglechime(item.id)}
                 />
             </View>
-        </TouchableOpacity>
+        </View>
     );
 
     return (
@@ -249,7 +260,7 @@ export default function chimeView() {
                     // headerTintColor: '#fff',
                     headerTitleStyle: {
                         fontWeight: 'bold',
-                        fontFamily: 'GuavineDemoRegular-1jGgL'
+                        fontFamily: 'guavine_demo_regular'
                     },
                     headerRight: () => (
                         <TouchableOpacity onPressIn={() => setModalVisible(true)} style={styles.headerButton}>
