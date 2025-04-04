@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Stack, Link } from 'expo-router';
 import { View, Text, FlatList, Switch, Modal, Pressable, Alert, Button, Image, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import * as Device from 'expo-device';
-import { NOTIFICATION_CHANNEL_ID, CHIME_STORAGE_KEY, DEFAULT_SOUND } from '../globals';
+import { NOTIFICATION_CHANNEL_ID, CHIME_STORAGE_KEY, DAYS_STORAGE_KEY, DEFAULT_SOUND } from '../globals';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -21,7 +21,8 @@ type Chime = {
     time: string;
     hour: number;
     enabled: boolean;
-    identifier: string | null; // Allow `identifier` to be a string or null
+    // identifier: string | null; // Allow `identifier` to be a string or null
+    identifiers: Record<number, string>
 };
 
 export default function chimeView() {
@@ -31,6 +32,8 @@ export default function chimeView() {
     const notificationListener = useRef<Notifications.EventSubscription>();
     const responseListener = useRef<Notifications.EventSubscription>();
     const [modalVisible, setModalVisible] = useState(false);
+    const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    const [selectedDays, setSelectedDays] = useState<number[]>([]);
 
     const formatTime12Hour = (hour: number): string => {
         const period = hour < 12 ? "AM" : "PM";
@@ -43,17 +46,27 @@ export default function chimeView() {
             id: `chime-${hour}`,
             time: formatTime12Hour(hour),
             hour,
+            days: [],
             enabled: false,
-            identifier: null,
+            identifiers: {},
         }));
 
-    const [chimes, setchimes] = useState<Chime[]>(generatechimes());
+    const [chimes, setChimes] = useState<Chime[]>(generatechimes());
 
-    const savechimesToStorage = async (chimes: Chime[]) => {
+    const saveChimesToStorage = async (chimes: Chime[]) => {
         try {
             await AsyncStorage.setItem(CHIME_STORAGE_KEY, JSON.stringify(chimes));
         } catch (error) {
             console.error('Failed to save chimes:', error);
+        }
+    };
+
+    const saveDaysToStorage = async (days: number[]) => {
+        console.log('saving days: ', days)
+        try {
+            await AsyncStorage.setItem(DAYS_STORAGE_KEY, JSON.stringify(days));
+        } catch (error) {
+            console.error('Failed to save days:', error);
         }
     };
 
@@ -64,15 +77,24 @@ export default function chimeView() {
                 Notifications.deleteNotificationChannelAsync(channel.id)
             }
         });
-        console.log('channels: ', channels)
     }
 
-    const loadchimesFromStorage = async () => {
+    const loadChimesFromStorage = async () => {
         try {
             const storedchimes = await AsyncStorage.getItem(CHIME_STORAGE_KEY);
             return storedchimes ? JSON.parse(storedchimes) : null;
         } catch (error) {
             console.error('Failed to load chimes:', error);
+            return null;
+        }
+    };
+
+    const loadDaysFromStorage = async () => {
+        try {
+            const storedDays = await AsyncStorage.getItem(DAYS_STORAGE_KEY);
+            return storedDays ? JSON.parse(storedDays) : null;
+        } catch (error) {
+            console.error('Failed to load days:', error);
             return null;
         }
     };
@@ -104,11 +126,16 @@ export default function chimeView() {
     }, []);
 
     useEffect(() => {
-        loadchimesFromStorage().then((savedchimes) => {
+        loadDaysFromStorage().then((savedDays) => {
+            if (savedDays) {
+                setSelectedDays(savedDays);
+            }
+        });
+        loadChimesFromStorage().then((savedchimes) => {
             if (savedchimes) {
-                setchimes(savedchimes);
+                setChimes(savedchimes);
             } else {
-                setchimes(generatechimes()); // Default chimes if none are saved
+                setChimes(generatechimes()); // Default chimes if none are saved
             }
         });
     }, []);
@@ -162,7 +189,7 @@ export default function chimeView() {
         return token;
     }
 
-    async function enableChime(hour: number) {
+    async function enableChime(hour: number, day: number) {
         const identifier = await Notifications.scheduleNotificationAsync({
             content: {
                 title: "The time is " + formatTime12Hour(hour),
@@ -171,71 +198,107 @@ export default function chimeView() {
                 // sound: "twangy_old_clock_louder.wav",
             },
             trigger: {
-                type: Notifications.SchedulableTriggerInputTypes.DAILY,
-                // seconds: 10,
+                type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
                 channelId: NOTIFICATION_CHANNEL_ID,
-                hour: hour,
-                minute: 0,
+                weekday: day + 1, // 1-7 for Sunday-Saturday
+                hour: 15,
+                minute: 58,
+                // seconds: 10,
             },
         });
         return identifier
     }
 
-    // export type WeeklyTriggerInput = {
-    //     type: SchedulableTriggerInputTypes.WEEKLY;
-    //     channelId?: string;
-    //     weekday: number;
-    //     hour: number;
-    //     minute: number;
-    // };
-
-    //   to set chimes for certain days of the week:
-    // const days = [0, 1, 2, 3, 4, 5, 6];
-    // for day in days:
-    //    enableChime(day, hour)
-
-    const togglechime = async (chime_id: string) => {
-        setchimes((prevChimes) =>
-            prevChimes.map((chime) =>
-                chime.id === chime_id ? { ...chime, enabled: !chime.enabled } : chime
-            )
-        );
-
+    const toggleChime = async (chime_id: string) => {
         const chime = chimes.find((c) => c.id === chime_id);
         if (!chime) return;
 
         if (!chime.enabled) {
-            // Enable chime
-            try {
-                const notification_id = await enableChime(chime.hour);
-                updateChimeState(chime_id, notification_id, true);
-                console.log("Enabled chime ID: ", notification_id);
-            } catch (error) {
-                console.error("Failed to enable chime:", error);
+            // Enable chime for all selected days
+            const identifiers: Record<number, string> = {};
+            for (const day of selectedDays) {
+                try {
+                    const id = await enableChime(chime.hour, day);
+                    identifiers[day] = id;
+                } catch (error) {
+                    console.error(`Failed to enable chime for day ${day}:`, error);
+                }
             }
+            updateChimeState(chime_id, identifiers, true);
         } else {
-            // Disable chime
-            if (chime.identifier) {
-                await Notifications.cancelScheduledNotificationAsync(chime.identifier);
-                updateChimeState(chime_id, null, false);
-                console.log("Disabled chime ID: ", chime.identifier);
+            // Disable all scheduled notifications for this chime
+            const ids = Object.values(chime.identifiers);
+            for (const id of ids) {
+                await Notifications.cancelScheduledNotificationAsync(id);
             }
+            updateChimeState(chime_id, {}, false);
         }
     };
 
-    // Helper function to update chimes in state & storage
-    const updateChimeState = (chime_id: string, identifier: string | null, enabled: boolean) => {
-        setchimes((currentChimes) => {
-            const updatedChimes = currentChimes.map((chime) =>
-                chime.id === chime_id ? { ...chime, identifier, enabled } : chime
-            );
-            savechimesToStorage(updatedChimes);
-            return updatedChimes;
+    const toggleChimeByDay = (index: number) => {
+        setSelectedDays(prevSelected => {
+            const updatedDays = prevSelected.includes(index)
+                ? prevSelected.filter(day => day !== index)
+                : [...prevSelected, index];
+
+            updateScheduledChimesForSelectedDays(updatedDays);
+            return updatedDays;
         });
     };
 
-    const chooseSound = (id: String) => {
-        alert(`Choose sound for chime ID: ${id}`);
+    const updateScheduledChimesForSelectedDays = async (newSelectedDays: number[]) => {
+        const updatedChimes = await Promise.all(chimes.map(async (chime) => {
+            if (!chime.enabled) return chime;
+
+            // Cancel existing notifications for days no longer selected
+            for (const [day, id] of Object.entries(chime.identifiers)) {
+                const dayNum = Number(day);
+                if (!newSelectedDays.includes(dayNum)) {
+                    await Notifications.cancelScheduledNotificationAsync(id);
+                }
+            }
+
+            const newIdentifiers: Record<number, string> = { ...chime.identifiers };
+
+            // Schedule new notifications for newly added days
+            for (const day of newSelectedDays) {
+                if (!newIdentifiers[day]) {
+                    const id = await enableChime(chime.hour, day);
+                    newIdentifiers[day] = id;
+                }
+            }
+
+            // Remove identifiers for deselected days
+            for (const day of Object.keys(newIdentifiers)) {
+                if (!newSelectedDays.includes(Number(day))) {
+                    delete newIdentifiers[Number(day)];
+                }
+            }
+
+            return {
+                ...chime,
+                identifiers: newIdentifiers,
+            };
+        }));
+
+        setChimes(updatedChimes);
+        saveChimesToStorage(updatedChimes);
+        saveDaysToStorage(newSelectedDays)
+    };
+
+    // Helper function to update chimes in state & storage
+    const updateChimeState = (
+        chime_id: string,
+        identifiers: Record<number, string>,
+        enabled: boolean
+    ) => {
+        setChimes((currentChimes) => {
+            const updatedChimes = currentChimes.map((chime) =>
+                chime.id === chime_id ? { ...chime, identifiers, enabled } : chime
+            );
+            saveChimesToStorage(updatedChimes);
+            return updatedChimes;
+        });
     };
 
     const renderchimeItem = ({ item }) => (
@@ -244,8 +307,8 @@ export default function chimeView() {
                 <Text style={styles.chimeTime}>{item.time}</Text>
                 {/* <Button style={styles.soundButton} title='choose sound' onPress={() => chooseSound(item.id)} /> */}
                 <Switch
+                    onValueChange={() => toggleChime(item.id)}
                     value={item.enabled}
-                    onValueChange={() => togglechime(item.id)}
                 />
             </View>
         </View>
@@ -269,6 +332,17 @@ export default function chimeView() {
                     ),
                 }}
             />
+            <View style={styles.WeekContainer}>
+                {days.map((day, index) => (
+                    <TouchableOpacity
+                        key={index}
+                        style={[styles.circle, selectedDays.includes(index) && styles.selectedCircle]}
+                        onPress={() => toggleChimeByDay(index)}
+                    >
+                        <Text style={[styles.text, selectedDays.includes(index) && styles.selectedText]}>{day}</Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
             <Modal
                 animationType="fade"
                 transparent={true}
@@ -306,6 +380,31 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#f4f4f5',
         padding: 16,
+    },
+    WeekContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginVertical: 20,
+    },
+    circle: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#000',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginHorizontal: 5,
+    },
+    selectedCircle: {
+        backgroundColor: 'blue',
+    },
+    text: {
+        fontSize: 16,
+        color: '#000',
+    },
+    selectedText: {
+        color: '#fff',
     },
     header: {
         fontSize: 22,
