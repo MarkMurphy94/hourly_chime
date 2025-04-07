@@ -46,7 +46,6 @@ export default function chimeView() {
             id: `chime-${hour}`,
             time: formatTime12Hour(hour),
             hour,
-            days: [],
             enabled: false,
             identifiers: {},
         }));
@@ -62,7 +61,7 @@ export default function chimeView() {
     };
 
     const saveDaysToStorage = async (days: number[]) => {
-        console.log('saving days: ', days)
+        // console.log('saving days: ', days)
         try {
             await AsyncStorage.setItem(DAYS_STORAGE_KEY, JSON.stringify(days));
         } catch (error) {
@@ -101,6 +100,7 @@ export default function chimeView() {
 
     useEffect(() => {
         clearOldNotificationChannels()
+        // Notifications.cancelAllScheduledNotificationsAsync(); // cos the fucking things wouldnt stop....
         registerForPushNotificationsAsync().then(token => token && setExpoPushToken(token));
 
         if (Platform.OS === 'android') {
@@ -115,7 +115,6 @@ export default function chimeView() {
             console.log(response);
             console.log('responding to notification')
         });
-        // Notifications.cancelAllScheduledNotificationsAsync(); // cos the fucking things wouldnt stop....
 
         return () => {
             notificationListener.current &&
@@ -201,8 +200,8 @@ export default function chimeView() {
                 type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
                 channelId: NOTIFICATION_CHANNEL_ID,
                 weekday: day + 1, // 1-7 for Sunday-Saturday
-                hour: 15,
-                minute: 58,
+                hour: hour,
+                minute: 0,
                 // seconds: 10,
             },
         });
@@ -255,23 +254,24 @@ export default function chimeView() {
                 const dayNum = Number(day);
                 if (!newSelectedDays.includes(dayNum)) {
                     await Notifications.cancelScheduledNotificationAsync(id);
+                    delete chime.identifiers[dayNum]; // Remove identifier for deselected day
                 }
             }
 
             const newIdentifiers: Record<number, string> = { ...chime.identifiers };
+
+            // Remove identifiers for deselected days
+            for (const day of Object.keys(newIdentifiers)) {
+                if (!newSelectedDays.includes(Number(day))) {
+                    delete newIdentifiers[Number(day)];
+                }
+            }
 
             // Schedule new notifications for newly added days
             for (const day of newSelectedDays) {
                 if (!newIdentifiers[day]) {
                     const id = await enableChime(chime.hour, day);
                     newIdentifiers[day] = id;
-                }
-            }
-
-            // Remove identifiers for deselected days
-            for (const day of Object.keys(newIdentifiers)) {
-                if (!newSelectedDays.includes(Number(day))) {
-                    delete newIdentifiers[Number(day)];
                 }
             }
 
@@ -284,6 +284,7 @@ export default function chimeView() {
         setChimes(updatedChimes);
         saveChimesToStorage(updatedChimes);
         saveDaysToStorage(newSelectedDays)
+        console.log('updated chimes: ', updatedChimes)
     };
 
     // Helper function to update chimes in state & storage
