@@ -6,6 +6,7 @@ import { NOTIFICATION_CHANNEL_ID, CHIME_STORAGE_KEY, DEFAULT_SOUND } from '../gl
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as StoreReview from 'expo-store-review';
 
 
 Notifications.setNotificationHandler({
@@ -23,6 +24,9 @@ type Chime = {
     enabled: boolean;
     identifier: string | null; // Allow `identifier` to be a string or null
 };
+
+const APP_LAUNCH_COUNT_KEY = 'app_launch_count';
+const HAS_PROMPTED_KEY = 'has_prompted_for_review';
 
 export default function chimeView() {
     const [expoPushToken, setExpoPushToken] = useState('');
@@ -57,14 +61,14 @@ export default function chimeView() {
         }
     };
 
-    const clearOldNotificationChannels = async () => {
+    const clearOldNotificationChannelsIfPresent = async () => {
         const channels = await Notifications.getNotificationChannelsAsync()
         channels.forEach(channel => {
             if (channel.id !== NOTIFICATION_CHANNEL_ID) {
                 Notifications.deleteNotificationChannelAsync(channel.id)
             }
         });
-        console.log('channels: ', channels)
+        // console.log('channels: ', channels)
     }
 
     const loadchimesFromStorage = async () => {
@@ -77,8 +81,33 @@ export default function chimeView() {
         }
     };
 
+    const checkAndMaybeRequestReview = async () => {
+        try {
+            const launchCountRaw = await AsyncStorage.getItem(APP_LAUNCH_COUNT_KEY);
+            const hasPromptedRaw = await AsyncStorage.getItem(HAS_PROMPTED_KEY);
+
+            const launchCount = launchCountRaw ? parseInt(launchCountRaw, 10) : 0;
+            const hasPrompted = hasPromptedRaw === 'true';
+
+            const newLaunchCount = launchCount + 1;
+            await AsyncStorage.setItem(APP_LAUNCH_COUNT_KEY, newLaunchCount.toString());
+
+            // Trigger on 3rd or 4th launch only, and if user hasn’t already been prompted
+            if ((newLaunchCount === 3 || newLaunchCount === 4) && !hasPrompted) {
+                if (await StoreReview.isAvailableAsync()) {
+                    StoreReview.requestReview();
+                    await AsyncStorage.setItem(HAS_PROMPTED_KEY, 'true');
+                }
+            }
+
+        } catch (error) {
+            console.warn('Error handling review prompt:', error);
+        }
+    };
+
     useEffect(() => {
-        clearOldNotificationChannels()
+        checkAndMaybeRequestReview()
+        clearOldNotificationChannelsIfPresent()
         registerForPushNotificationsAsync().then(token => token && setExpoPushToken(token));
 
         if (Platform.OS === 'android') {
@@ -180,19 +209,6 @@ export default function chimeView() {
         });
         return identifier
     }
-
-    // export type WeeklyTriggerInput = {
-    //     type: SchedulableTriggerInputTypes.WEEKLY;
-    //     channelId?: string;
-    //     weekday: number;
-    //     hour: number;
-    //     minute: number;
-    // };
-
-    //   to set chimes for certain days of the week:
-    // const days = [0, 1, 2, 3, 4, 5, 6];
-    // for day in days:
-    //    enableChime(day, hour)
 
     const togglechime = async (chime_id: string) => {
         setchimes((prevChimes) =>

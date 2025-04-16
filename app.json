@@ -69,7 +69,8 @@
             "./assets/fonts/vollkorn_regular.otf"
           ]
         }
-      ]
+      ],
+      "expo-build-properties"
     ],
     "experiments": {
       "typedRoutes": true
