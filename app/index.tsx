@@ -351,8 +351,8 @@ export default function chimeView() {
                 <View style={styles.centeredView}>
                     <View style={styles.modalView}>
                         <Image style={styles.modalImage} source={require("../assets/images/clipart2804211.png")} />
-                        <Text style={styles.modalText}>Thank you for downloading the Hourly Chime Grandfather Clock app!</Text>
-                        <Text style={styles.modalText}>Simply toggle the hours and days you want chimes for, and a chime will be scheduled for that time.</Text>
+                        <Text style={styles.modalText}>Thank you for downloading this app! I have found it very helpful for my own time management. I hope it is just as helpful for you!</Text>
+                        <Text style={styles.modalText}>Simply toggle the hours and days you want chimes for, and chimes will be scheduled for those times.</Text>
                         <Text style={styles.modalText}>If your chimes are not working, try following these steps. PLEASE NOTE: These settings may be slightly different on your phone:</Text>
                         <Text style={styles.modalText}>1. Open your phone's settings and look for the battery settings.</Text>
                         <Text style={styles.modalText}>2. Open the Background Usage Limits setting, and add this app to the list of "Never auto sleeping" apps.</Text>
