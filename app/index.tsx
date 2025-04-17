@@ -69,7 +69,7 @@ export default function chimeView() {
         }
     };
 
-    const clearOldNotificationChannels = async () => {
+    const clearOldNotificationChannelsIfPresent = async () => {
         const channels = await Notifications.getNotificationChannelsAsync()
         channels.forEach(channel => {
             if (channel.id !== NOTIFICATION_CHANNEL_ID) {
@@ -99,7 +99,7 @@ export default function chimeView() {
     };
 
     useEffect(() => {
-        clearOldNotificationChannels()
+        clearOldNotificationChannelsIfPresent()
         // Notifications.cancelAllScheduledNotificationsAsync(); // cos the fucking things wouldnt stop....
         registerForPushNotificationsAsync().then(token => token && setExpoPushToken(token));
 
