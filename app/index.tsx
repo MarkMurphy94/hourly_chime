@@ -115,6 +115,7 @@ export default function chimeView() {
             console.warn('Error handling review prompt:', error);
         }
     }
+
     const loadDaysFromStorage = async () => {
         try {
             const storedDays = await AsyncStorage.getItem(DAYS_STORAGE_KEY);
@@ -543,5 +544,3 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
 });
-
-// export default chimeView;
