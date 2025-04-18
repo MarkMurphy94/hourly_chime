@@ -1,3 +1,4 @@
+const PACKAGE_NAME = "com.markmurphy94.hourly_chime"
 const NOTIFICATION_CHANNEL_ID = 'GC_app_21';
 const DEFAULT_SOUND = 'twangy_old_clock_louder.wav'; // Default sound file name
 const CHIME_STORAGE_KEY = 'chimes';
@@ -10,6 +11,7 @@ const AVAILABLE_SOUNDS = [
 ];
 
 export {
+    PACKAGE_NAME,
     NOTIFICATION_CHANNEL_ID,
     DEFAULT_SOUND,
     CHIME_STORAGE_KEY,
