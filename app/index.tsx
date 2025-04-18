@@ -61,7 +61,7 @@ export default function chimeView() {
         }
     };
 
-    const clearOldNotificationChannelsIfPresent = async () => {
+    const clearOldNotificationChannels = async () => {
         const channels = await Notifications.getNotificationChannelsAsync()
         channels.forEach(channel => {
             if (channel.id !== NOTIFICATION_CHANNEL_ID) {
@@ -107,7 +107,7 @@ export default function chimeView() {
 
     useEffect(() => {
         checkAndMaybeRequestReview()
-        clearOldNotificationChannelsIfPresent()
+        clearOldNotificationChannels()
         registerForPushNotificationsAsync().then(token => token && setExpoPushToken(token));
 
         if (Platform.OS === 'android') {
