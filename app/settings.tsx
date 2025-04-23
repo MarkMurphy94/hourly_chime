@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, Switch, StyleSheet, TouchableOpacity, Button, Alert, Platform } from "react-native";
-import Slider from '@react-native-community/slider';
 import { Stack } from "expo-router";
-import { Audio } from 'expo-av';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Notifications from 'expo-notifications';
 import { MenuProvider, Menu, MenuOptions, MenuOption, MenuTrigger, } from 'react-native-popup-menu';
 import * as IntentLauncher from 'expo-intent-launcher';
 import { NOTIFICATION_CHANNEL_ID } from '../globals';
-import { getPackageJson } from 'expo/config';
+// import { getPackageJson } from 'expo/config';
+// import * as Linking from 'expo-linking';
+// import Slider from '@react-native-community/slider';
+// import { Audio } from 'expo-av';
+// import AsyncStorage from '@react-native-async-storage/async-storage';
+// import * as Notifications from 'expo-notifications';
 
 export default function settings() {
 
@@ -18,7 +19,6 @@ export default function settings() {
         'ting_tung.aiff',
         'twangy_old_clock_louder.wav'
     ];
-
 
     const changeSound = async () => {
         // TODO: clean up html
@@ -68,6 +68,12 @@ export default function settings() {
                         <Text style={styles.label}>Chime notification settings</Text>
                     </TouchableOpacity>
                 </View>
+                <View style={styles.settingItem}>
+                    <TouchableOpacity>
+                        <Text style={styles.label}>Smart watch notifications</Text>
+                        <Text style={styles.subTitle}>Open your phone's Smart watch or Wearable companion app, go to watch settings>notifications>app notifications, and toggle on notifications for this app in the list of apps. These settings may look different depending on your device.</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         </MenuProvider>
     )
@@ -99,6 +105,6 @@ const styles = StyleSheet.create({
     },
     subTitle: {
         fontSize: 15,
-        color: "#333",
+        color: "#969696",
     },
 });
